@@ -1,24 +1,33 @@
 # SignFlow — Live Hand Sign Recognition
 
+**Status: Accessibility-oriented computer-vision prototype**
+
 [![CI](https://github.com/rsswethaa/hand-sign-recognition/actions/workflows/ci.yml/badge.svg)](https://github.com/rsswethaa/hand-sign-recognition/actions/workflows/ci.yml)
 
-A portfolio-grade real-time hand-gesture product that combines browser webcam capture, MediaPipe hand landmarks, a Python gesture engine, dynamic gesture tracking, temporal smoothing, a sentence builder and an optional classifier trained from captured samples.
+**[Live Demo](https://swethaa-signflow.onrender.com) · [Architecture](docs/ARCHITECTURE.md) · [Training Guide](docs/TRAINING.md) · [Accessibility](docs/ACCESSIBILITY.md)**
 
-## Product capabilities
-- live webcam input using MediaPipe Hands in the browser
-- 21-landmark inference endpoint
-- static demo vocabulary: open palm, fist, point, V sign, thumbs-up and I-love-you gesture
-- dynamic swipe-left / swipe-right recognition using wrist trajectory
-- temporal prediction smoothing to reduce frame-to-frame flicker
-- sign → word → sentence builder with repeat/debounce controls
-- in-product labelled landmark sample capture
-- Random Forest training pipeline for real captured samples
-- automatic learned-model inference when `models/gesture_classifier.joblib` exists
-- transparent rule-engine fallback
-- responsive UI, Flask API, Docker packaging, tests and CI
-- accessibility and responsible-use documentation
+SignFlow explores real-time hand input using browser webcam capture, MediaPipe hand landmarks, temporal gesture tracking and an optional classifier trained from captured examples.
+
+## What it does
+
+- captures live webcam input in the browser
+- receives 21 MediaPipe hand landmarks per frame
+- recognises a small static demo vocabulary
+- tracks dynamic swipe-left / swipe-right motion from wrist trajectory
+- smooths predictions across frames to reduce flicker
+- builds words into a simple sentence stream with debounce controls
+- collects labelled landmark samples in-product
+- trains a Random Forest classifier from captured examples
+- automatically uses a trained model when `models/gesture_classifier.joblib` exists
+- falls back to transparent geometric rules when no model is available
+- runs with Flask, Docker, automated tests and CI
+
+## Why a rule baseline and a trained path?
+
+A rule baseline makes the interaction reproducible before a dataset exists and makes geometry failures visible. The trained path becomes meaningful only after enough labelled examples are collected across different people, positions and conditions.
 
 ## Architecture
+
 ```mermaid
 flowchart LR
   C[Webcam] --> MP[MediaPipe Hands]
@@ -36,56 +45,43 @@ flowchart LR
   TR --> M
 ```
 
-## Run the live product
+## Run locally
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
-Open `http://localhost:5000`, allow camera access and start signing. MediaPipe browser assets are loaded from jsDelivr.
+
+Open `http://localhost:5000`, allow camera access and start signing.
 
 ## Train on captured samples
-Use the **Collect real training samples** panel in the live UI to record labelled examples.
+
+Use the **Collect real training samples** panel in the UI, then run:
 
 ```bash
 pip install -r requirements-training.txt
 python training/train_classifier.py training_data/landmarks.jsonl
 ```
 
-The trainer saves `models/gesture_classifier.joblib` and prints a holdout confusion matrix and classification report. Restart the app and it will automatically prefer the learned model for static gestures.
+The trainer writes `models/gesture_classifier.joblib` and reports a holdout confusion matrix/classification report.
 
-For credible evaluation, collect multiple examples across different people, positions, lighting conditions and backgrounds, and separate signers between training and testing.
+For a credible experiment, collect examples across multiple signers and environments and keep signers separated between training and evaluation.
 
 ## API
-- `POST /api/predict` — static + dynamic gesture inference
-- `POST /api/training/sample` — save a labelled 21-landmark example
-- `GET /api/training/status` — captured sample counts and trained-model status
-- `POST /api/sentence/clear` — clear phrase
+
+- `POST /api/predict` — static + dynamic inference
+- `POST /api/training/sample` — save a labelled landmark example
+- `GET /api/training/status` — sample counts and model status
+- `POST /api/sentence/clear` — clear the phrase
 - `POST /api/sentence/space` — allow a repeated word
 - `GET /health` — service/model status
 
-## Repository structure
-```text
-app.py                    live product API
-static/, templates/       webcam UI
-src/gesture_engine.py     static rules, dynamics, smoothing and sentence builder
-src/learned_classifier.py optional learned model adapter
-src/sample_store.py       captured landmark storage
-src/features.py           scale/translation-invariant features
-training/                 classifier training pipeline
-training_data/            local captured samples; ignored by Git
-models/                   local trained model artifact; ignored by Git
-database/                 recognition audit schema and SQL
-tests/                    feature, storage, product and training-data tests
-docs/                     architecture, API, training, accessibility, security, model card and report
-```
+## Accessibility boundary
 
-## Accessibility use case
-SignFlow demonstrates how camera-based hand input could support accessible or hands-free interaction. It includes visual feedback and a sentence builder, but it is not a certified sign-language translator. Natural sign languages include orientation, movement, location, facial expression, body posture, spatial grammar and community-specific linguistic conventions.
+SignFlow demonstrates how camera-based hand input could support accessible or hands-free interaction. It is **not a certified sign-language translator**. Natural sign languages include orientation, movement, location, facial expression, body posture, spatial grammar and community-specific linguistic conventions that are far richer than this prototype vocabulary.
 
-## What I learned
-This project demonstrates browser computer vision, hand-landmark geometry, temporal recognition, data collection, ML training, explainable fallback design, accessibility considerations, Flask APIs, Docker and CI.
+## Evaluation integrity
 
-## Integrity note
-The repository does not claim sign-language translation accuracy or a trained-model benchmark until real labelled samples are collected and evaluated. The built-in rules exist so the product remains reproducible before a trained artifact is available.
+The repository does not claim sign-language translation accuracy or a trained-model benchmark until real labelled samples are collected and evaluated. The built-in rules exist so the product remains inspectable and reproducible before a trained artifact is available.
